@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <title>Formulario</title>
+    <script src="./socket.io/socket.io.js"></script>
+    <style>
+        .no--show {
+            display: none;
+        }
+
+        .show {
+            display: block;
+        }
+
+        .container--chat--form {
+            display: block;
+            width: 80%;
+            margin: 50px auto;
+            border-radius: 6px;
+            border: 1px solid black;
+            min-height: 300px;
+            position: relative;
+        }
+
+        .chat--form-messages {
+            position: relative;
+            width: 100%;
+            scroll-behavior: smooth;
+        }
+
+        .chat--form-input {
+            position: relative;
+            bottom: 0;
+            width: 80%;
+            border: none;
+            border-radius: 6px;
+            padding: 6px;
+        }
+
+        .button-form {
+            width: 19%;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <form id="data_user">
+            <div>
+                <input type="text" id="name_user" name="name_user" placeholder="Name">
+                <input type="email" id="email_user" name="email_user" placeholder="Email">
+                <input type="submit" value="Ingresar al chat" />
+            </div>
+        </form>
+    </div>
+
+    <div class="no--show" id="container--chat">
+        <%- include ("./tableProducts.ejs") %>
+            <form class="container--chat--form">
+                <div class="chat--form-messages" id="text_chat">
+
+                </div>
+                <input class="chat--form-input" type="text" id="message_user" placeholder="Escriba un mensaje" />
+                <button class="btn btn-primary button-form" id="send_message">Enviar</button>
+            </form>
+    </div>
+    <script>
+        let user = null;
+        let socket = null;
+        let textChat = document.getElementById("text_chat");
+        let sendMessage = document.getElementById("send_message");
+        let form_data_user = document.getElementById("data_user");
+        let container_chat = document.getElementById("container--chat");
+        let formProductos = document.getElementById("form_productos");
+        let table_body = document.getElementById("table_body")
+
+        form_data_user.addEventListener("submit", e => {
+            e.preventDefault();
+            user = {
+                name: e.target[0].value,
+                email: e.target[1].value
+            }
+            if (user.name === "" || user.email === "") {
+                window.location.reload()
+            }
+            socket = io();
+            container_chat.classList.replace("no--show", "show");
+            data_user.classList.add("no--show");
+            readSocket();
+        })
+
+        formProductos.addEventListener('submit', e => {
+            e.preventDefault()
+            const newPost = {
+                name: e.target[0].value,
+                price: e.target[1].value,
+                image: e.target[2].value
+            }
+            sendDataPost(newPost)
+        })
+
+        const sendDataPost = async (data) => {
+            try {
+                await fetch('http://localhost:3000/api/productos', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-type': 'application/json'
+                    },
+                    body: JSON.stringify(data, null, 2)
+                })
+                    .then(res => socket.emit("addProduct"))
+            } catch (error) {
+                console.log("Hubo error: " + error)
+            }
+        }
+
+        const readSocket = () => {
+            loadChat();
+            socket.on('listenserver', (dataChat, dataProducto) => {
+                writeChat(dataChat);
+                writeTable(dataProducto);
+            })
+        }
+
+
+        const loadChat = () => {
+            socket.on("init", (dataChat, dataProducto) => {
+                writeChat(dataChat);
+                writeTable(dataProducto);
+            })
+        }
+
+        const writeTable = async (dataProducto) => {
+            let inner = dataProducto.map(dato =>
+                `   
+                    <tr>
+                        <td>
+                            ${dato.name}
+                        </td>
+                        <td>
+                            ${dato.price}
+                        </td>
+                        <td><img style="object-fit: contain; width: 50px;" src=${dato.image} alt=${dato.image} /></td>
+                    </tr>
+                `
+            )
+            table_body.innerHTML = inner;
+        }
+
+        const writeChat = (dataChat) => {
+            let inner = '';
+            dataChat.map(data => inner += `<p style="color: brown"><b style="color: blue">${data.name}</b> [${data.day}  ${data.hour}] <i style="color: green">${data.mensaje}</i></p>`);
+            textChat.innerHTML = inner;
+        }
+
+        sendMessage.addEventListener('click', e => {
+            e.preventDefault()
+            let sendData = {
+                ...user,
+                mensaje: message_user.value
+            }
+            socket.emit("chat_text", sendData);
+            message_user.value = "";
+        })
+    </script>
+</body>
+
+</html>

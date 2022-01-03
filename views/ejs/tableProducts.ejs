@@ -1,0 +1,32 @@
+<div>
+    <h1 style="text-align: center; margin: 20px 0">
+        <%= formularioTitle %>
+    </h1>
+    <form class="prod-form" id="form_productos" method="post" action="/api/productos">
+        <div class="d-flex flex-column align-items-center">
+            <input type="text" name="name_product" id="name_product" class="form-control" placeholder="Nombre"
+                style="margin-bottom: 10px;width: 50%;margin: 10px auto;">
+            <input type="number" name="price_product" id="price_product" class="form-control" placeholder="Precio"
+                style="margin-bottom: 10px;width: 50%;margin: 10px auto;">
+            <input type="url" name="image_product" id="image_product" class="form-control" placeholder="Url de la foto"
+                style="margin-bottom: 10px;width: 50%;margin: 10px auto;" />
+            <input type="submit" class="btn btn-primary" value="Ingresar producto" />
+        </div>
+    </form>
+</div>
+<div class="table-responsive"
+    style="display: flex; justify-content: center; flex-direction: column; align-items: center;">
+    <h1 style="text-align: center; margin: 50px auto;">Tabla de productos</h1>
+    <table class="table" style="width: 80%; margin: 0 auto;">
+        <thead>
+            <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Precio</th>
+                <th scope="col">Imagen</th>
+            </tr>
+        </thead>
+        <tbody id="table_body">
+            
+        </tbody>
+    </table>
+</div>
