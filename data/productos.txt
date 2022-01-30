@@ -1,0 +1,12 @@
+[
+  {
+    "nombre": "Emiliano",
+    "precio": "21312",
+    "foto": "https://cdn4.iconfinder.com/data/icons/one-piece-anime/48/Sed-01-256.png"
+  },
+  {
+    "nombre": "Matias",
+    "precio": "212",
+    "foto": "https://cdn4.iconfinder.com/data/icons/one-piece-anime/48/Sed-01-256.png"
+  }
+]

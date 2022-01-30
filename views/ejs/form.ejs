@@ -9,6 +9,7 @@
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <title>Formulario</title>
     <script src="./socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/normalizr@3.6.1/dist/normalizr.browser.min.js"></script>
     <style>
         .no--show {
             display: none;
@@ -46,6 +47,20 @@
         .button-form {
             width: 19%;
         }
+        .container--user-msj {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 80%;
+            margin: 10px 10%;
+        }
+        .img-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            background-color: #ebebebc2;
+        }
     </style>
 </head>
 
@@ -53,8 +68,12 @@
     <div>
         <form id="data_user">
             <div>
-                <input type="text" id="name_user" name="name_user" placeholder="Name">
-                <input type="email" id="email_user" name="email_user" placeholder="Email">
+                <input type="email" placeholder="Email" >
+                <input type="text" placeholder="Nombre" >
+                <input type="text" placeholder="Apellido" >
+                <input type="number" placeholder="Edad" >
+                <input type="text" placeholder="Alias">
+                <input type="text" placeholder="url avatar">
                 <input type="submit" value="Ingresar al chat" />
             </div>
         </form>
@@ -62,6 +81,7 @@
 
     <div class="no--show" id="container--chat">
         <%- include ("./tableProducts.ejs") %>
+            <h1 id="compresion-chat">Compresion de chat: </h1>
             <form class="container--chat--form">
                 <div class="chat--form-messages" id="text_chat">
 
@@ -78,15 +98,20 @@
         let form_data_user = document.getElementById("data_user");
         let container_chat = document.getElementById("container--chat");
         let formProductos = document.getElementById("form_productos");
-        let table_body = document.getElementById("table_body")
+        let table_body = document.getElementById("table_body");
+        let compresion_chat = document.getElementById("compresion-chat");
 
         form_data_user.addEventListener("submit", e => {
             e.preventDefault();
             user = {
-                name: e.target[0].value,
-                email: e.target[1].value
+                id: e.target[0].value,
+                nombre: e.target[1].value,
+                apellido: e.target[2].value,
+                edad: e.target[3].value,
+                alias: e.target[4].value,
+                avatar: e.target[5].value
             }
-            if (user.name === "" || user.email === "") {
+            if (user.id === "" || user.nombre === "" || user.apellido === "" || user.edad === "" || user.alias === "" || user.avatar === "") {
                 window.location.reload()
             }
             socket = io();
@@ -98,9 +123,9 @@
         formProductos.addEventListener('submit', e => {
             e.preventDefault()
             const newPost = {
-                name: e.target[0].value,
-                price: e.target[1].value,
-                image: e.target[2].value
+                nombre: e.target[0].value,
+                precio: e.target[1].value,
+                foto: e.target[2].value
             }
             sendDataPost(newPost)
         })
@@ -123,17 +148,19 @@
 
         const readSocket = () => {
             loadChat();
-            socket.on('listenserver', (dataChat, dataProducto) => {
+            socket.on('listenserver', (dataChat, dataProducto, dataCompresion) => {
                 writeChat(dataChat);
                 writeTable(dataProducto);
+                compresion_chat.innerText = `Compresion del chat: ${dataCompresion}%`;
             })
         }
 
 
         const loadChat = () => {
-            socket.on("init", (dataChat, dataProducto) => {
+            socket.on("init", (dataChat, dataProducto, dataCompresion) => {
                 writeChat(dataChat);
                 writeTable(dataProducto);
+                compresion_chat.innerText = `Compresion del chat: ${dataCompresion}%`;
             })
         }
 
@@ -142,12 +169,12 @@
                 `   
                     <tr>
                         <td>
-                            ${dato.name}
+                            ${dato.nombre}
                         </td>
                         <td>
-                            ${dato.price}
+                            ${dato.precio}
                         </td>
-                        <td><img style="object-fit: contain; width: 50px;" src=${dato.image} alt=${dato.image} /></td>
+                        <td><img style="object-fit: contain; width: 50px;" src=${dato.foto} alt=${dato.foto} /></td>
                     </tr>
                 `
             )
@@ -156,15 +183,25 @@
 
         const writeChat = (dataChat) => {
             let inner = '';
-            dataChat.map(data => inner += `<p style="color: brown"><b style="color: blue">${data.name}</b> [${data.day}  ${data.hour}] <i style="color: green">${data.mensaje}</i></p>`);
+            let dataNormalize = new normalizr.schema.Entity("mensajes");
+            let newSchemaOrganigrama = new normalizr.schema.Entity('organigrama', {
+                author: [dataNormalize]
+            })
+            let dataDenormalize = normalizr.denormalize(dataChat.result, newSchemaOrganigrama, dataChat.entities);
+            dataDenormalize.mensajes.map((data, i) => inner += `
+                <div class="container--user-msj">
+                    <p style="color: brown"><b style="color: blue">${data.author.nombre}</b> [${data.day} ${data.hour}] <i style="color: green">${data.text}</i></p>
+                    <img class="img-avatar" src='${data.author.avatar}' alt='${data.author.nombre} - ${i}'/>
+                </div>
+            `);
             textChat.innerHTML = inner;
         }
 
         sendMessage.addEventListener('click', e => {
             e.preventDefault()
             let sendData = {
-                ...user,
-                mensaje: message_user.value
+                author: {...user},
+                text: message_user.value
             }
             socket.emit("chat_text", sendData);
             message_user.value = "";
